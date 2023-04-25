@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 
 ARG_PARSER = ArgumentParser()
 
-ARG_PARSER.add_argument('--batch_size', default=200, type=int)
+ARG_PARSER.add_argument('--batch_size', default=25, type=int)
 ARG_PARSER.add_argument('--test_size', default=0.2, type=int)
 ARG_PARSER.add_argument('--val_size', default=0.1, type=int)
 

@@ -57,7 +57,7 @@ class BEHRT_models():
         return pd.DataFrame(tokenized_src), pd.DataFrame(tokenized_gender), pd.DataFrame(tokenized_ethni), pd.DataFrame(tokenized_ins), pd.DataFrame(tokenized_age), pd.DataFrame(tokenized_labels)
 
 
-    def tokenization():
+    def tokenization(self):
         labs_list = []
         demo_list = []
         cond_list = []
