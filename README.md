@@ -91,6 +91,8 @@ If you wish to reduce the dataset, please run dataSubsetExtraction.py to extract
 	- **callibrate_output**
 		consists of code to calibrate model output.
 		It can also be used as standalone module.
+- **./test_results**
+	Contains our test results
 
 ### How to use the pipeline?
 - Dependencies are listed in the requirements.txt file. Please install these before proceeding on.
