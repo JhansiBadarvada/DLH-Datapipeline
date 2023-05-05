@@ -34,9 +34,9 @@ for r, d, f in os.walk(root_dir):
                 # Check if the file is a CSV file compressed as Gzip
                 if file.endswith('.csv'):
                     # Extract the file to a temporary directory
-                    # with gzip.open(os.path.join(root, file), 'rb') as f_in:
-                    #     with tempfile.NamedTemporaryFile(delete=False) as f_out:
-                    #         f_out.write(f_in.read())
+                    with gzip.open(os.path.join(root, file), 'rb') as f_in:
+                        with tempfile.NamedTemporaryFile(delete=False) as f_out:
+                            f_out.write(f_in.read())
                             
                     if len(subject_ids) == 0:
                         subject_ids = updateSubjects()
