@@ -110,3 +110,9 @@ If you wish to reduce the dataset, please run dataSubsetExtraction.py to extract
     alt="Our Result">
 </img>
 
+### Presentation Slides
+<object data="https://github.com/JhansiBadarvada/DLH-Datapipeline/blob/main/slides.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="https://github.com/JhansiBadarvada/DLH-Datapipeline/blob/main/slides.pdf">
+        <p>Our slides used for the project can be found <a href="https://github.com/JhansiBadarvada/DLH-Datapipeline/blob/main/slides.pdf">here</a>.</p>
+    </embed>
+</object>
