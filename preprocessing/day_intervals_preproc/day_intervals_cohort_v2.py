@@ -24,7 +24,7 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
     disch_col: column for visit end date information (normally dischtime or outtime)
     use_ICU: describes whether to speficially look at ICU visits in icu/icustays OR look at general admissions from core/admissions
     """
-
+    #print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     visit = None # df containing visit information depending on using ICU or not
     if use_ICU:
         visit = pd.read_csv(mimic4_path + "icu/icustays.csv.gz", compression='gzip', header=0, index_col=None, parse_dates=[admit_col, disch_col])
@@ -40,6 +40,7 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
                 print("[ READMISSION DUE TO "+disease_label+" ]")
         
     else:
+        #print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         visit = pd.read_csv(mimic4_path + "hosp/admissions.csv.gz", compression='gzip', header=0, index_col=None, parse_dates=[admit_col, disch_col])
         visit['los']=visit[disch_col]-visit[admit_col]
 
@@ -51,15 +52,16 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
         visit['los']=pd.to_numeric(visit['days'])
         visit=visit.drop(columns=['days', 'dummy','hours'])
         
-        
+        #print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         if use_admn:
             # remove hospitalizations with a death; impossible for readmission for such visits
             visit = visit.loc[visit.hospital_expire_flag == 0]
         if len(disease_label):
-                hids=disease_cohort.extract_diag_cohort(visit['hadm_id'],disease_label,mimic4_path)
+                hids=disease_cohort.extract_diag_cohort(visit['hadm_id'],disease_label,
+                                                       )
                 visit=visit[visit['hadm_id'].isin(hids['hadm_id'])]
                 print("[ READMISSION DUE TO "+disease_label+" ]")
-
+    #print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     pts = pd.read_csv(
             mimic4_path + "hosp/patients.csv.gz", compression='gzip', header=0, index_col = None, usecols=[group_col, 'anchor_year', 'anchor_age', 'anchor_year_group', 'dod','gender']
         )
@@ -69,6 +71,7 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
     # Define anchor_year corresponding to the anchor_year_group 2017-2019. This is later used to prevent consideration
     # of visits with prediction windows outside the dataset's time range (2008-2019)
     #[[group_col, visit_col, admit_col, disch_col]]
+    print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     if use_ICU:
         visit_pts = visit[[group_col, visit_col, adm_visit_col, admit_col, disch_col,'los']].merge(
             pts[[group_col, 'anchor_year', 'anchor_age', 'yob', 'min_valid_year', 'dod','gender']], how='inner', left_on=group_col, right_on=group_col
@@ -77,6 +80,7 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
         visit_pts = visit[[group_col, visit_col, admit_col, disch_col,'los']].merge(
                 pts[[group_col, 'anchor_year', 'anchor_age', 'yob', 'min_valid_year', 'dod','gender']], how='inner', left_on=group_col, right_on=group_col
             )
+        print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
     # only take adult patients
 #     visit_pts['Age']=visit_pts[admit_col].dt.year - visit_pts['yob']
@@ -85,9 +89,10 @@ def get_visit_pts(mimic4_path:str, group_col:str, visit_col:str, admit_col:str, 
     visit_pts = visit_pts.loc[visit_pts['Age'] >= 18]
     
     ##Add Demo data
+    #print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     eth = pd.read_csv(mimic4_path + "hosp/admissions.csv.gz", compression='gzip', header=0, usecols=['hadm_id', 'insurance','race'], index_col=None)
     visit_pts= visit_pts.merge(eth, how='inner', left_on='hadm_id', right_on='hadm_id')
-    
+    print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     if use_ICU:
         return visit_pts[[group_col, visit_col, adm_visit_col, admit_col, disch_col,'los', 'min_valid_year', 'dod','Age','gender','race', 'insurance']]
     else:
@@ -145,10 +150,16 @@ def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str,
     # Iterate through groupbys based on group_col (subject_id). Data is sorted by subject_id and admit_col (admittime)
     # to ensure that the most current hadm_id is last in a group.
     #grouped= df[[group_col, visit_col, admit_col, disch_col, valid_col]].sort_values(by=[group_col, admit_col]).groupby(group_col)
+    #print("Before sort" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     grouped= df.sort_values(by=[group_col, admit_col]).groupby(group_col)
-    for subject, group in tqdm(grouped):
+    #print("After sort" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S") )
+    #print(len(grouped))
+   
+    for subject, group in grouped:
         max_year = group.max()[disch_col].year
-
+        #print("loop "  + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+        #print(subject)
+        #print(subject, group)
         if group.shape[0] <= 1:
             #ctrl, invalid = validate_row(group.iloc[0], ctrl, invalid, max_year, disch_col, valid_col, gap)   # A group with 1 row has no readmission; goes to ctrl
             ctrl = ctrl.append(group.iloc[0])
@@ -174,8 +185,32 @@ def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str,
             #print(f"[ {gap.days} DAYS ] {case.shape[0] + ctrl.shape[0]}/{df.shape[0]} {visit_col}s processed")
 
     print("[ READMISSION LABELS FINISHED ]")
+    #print(case)
+    #print(ctrl)
     return case, ctrl, invalid
 
+def partition_by_readmit2(df:pd.DataFrame, gap:datetime.timedelta, group_col:str, visit_col:str, admit_col:str, disch_col:str, valid_col:str):
+    """Applies labels to individual visits according to whether or not a readmission has occurred within the specified `gap` days.
+    For a given visit, another visit must occur within the gap window for a positive readmission label.
+    The gap window starts from the disch_col time and the admit_col of subsequent visits are considered."""
+    
+    case = pd.DataFrame()   # hadm_ids with readmission within the gap period
+    ctrl = pd.DataFrame()   # hadm_ids without readmission within the gap period
+    invalid = pd.DataFrame()    # hadm_ids that are not considered in the cohort
+
+    # Iterate through groupbys based on group_col (subject_id). Data is sorted by subject_id and admit_col (admittime)
+    # to ensure that the most current hadm_id is last in a group.
+    #grouped= df[[group_col, visit_col, admit_col, disch_col, valid_col]].sort_values(by=[group_col, admit_col]).groupby(group_col)
+    df.sort_values(['subject_id', 'admittime'], inplace=True)
+    df['gap'] =  (df['admittime'] -  df.groupby('subject_id')['dischtime'].shift()).shift(-1)
+    df['gap'] = df['gap'].apply(lambda x: 1 if x <= gap else 0)
+    case = df[df['gap']==1]
+    ctrl = df[df['gap']==0]
+
+    print("[ READMISSION LABELS FINISHED ]")
+    #print(case)
+    #print(ctrl)
+    return case, ctrl, invalid
 
 def partition_by_mort(df:pd.DataFrame, group_col:str, visit_col:str, admit_col:str, disch_col:str, death_col:str):
     """Applies labels to individual visits according to whether or not a death has occurred within
@@ -231,12 +266,14 @@ def get_case_ctrls(df:pd.DataFrame, gap:int, group_col:str, visit_col:str, admit
     ctrl = None   # hadm_ids without readmission within the gap period
     invalid = None    # hadm_ids that are not considered in the cohort
 
+    #print("Before partition" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     if use_mort:
         return partition_by_mort(df, group_col, visit_col, admit_col, disch_col, death_col)
     elif use_admn:
         gap = datetime.timedelta(days=gap)
         # transform gap into a timedelta to compare with datetime columns
-        case, ctrl, invalid = partition_by_readmit(df, gap, group_col, visit_col, admit_col, disch_col, valid_col)
+        case, ctrl, invalid = partition_by_readmit2(df, gap, group_col, visit_col, admit_col, disch_col, valid_col)
+        #print("After partition" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
 
         # case hadm_ids are labelled 1 for readmission, ctrls have a 0 label
         case['label'] = np.ones(case.shape[0]).astype(int)
@@ -257,7 +294,9 @@ def extract_data(use_ICU:str, label:str, time:int, icd_code:str, root_dir, disea
     summary_output: name of summary output file
     use_ICU: state whether to use ICU patient data or not
     label: Can either be '{day} day Readmission' or 'Mortality', decides what binary data label signifies"""
+    print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     print("===========MIMIC-IV v2.0============")
+    print(datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     if not cohort_output:
         cohort_output="cohort_" + use_ICU.lower() + "_" + label.lower().replace(" ", "_") + "_" + str(time) + "_" + disease_label
     if not summary_output:
@@ -292,6 +331,8 @@ def extract_data(use_ICU:str, label:str, time:int, icd_code:str, root_dir, disea
     use_ICU = use_ICU == "ICU" # change to boolean value
     use_disease=icd_code!="No Disease Filter"
     
+    print("Before pts" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+    
     if use_ICU:
         group_col='subject_id'
         visit_col='stay_id'
@@ -322,9 +363,11 @@ def extract_data(use_ICU:str, label:str, time:int, icd_code:str, root_dir, disea
     )
     #print("pts",pts.head())
     
+    #print("After pts" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     # cols to be extracted from get_case_ctrls
     cols = [group_col, visit_col, admit_col, disch_col, 'Age','gender','ethnicity','insurance','label']
 
+    print("Before case" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     if use_mort:
         cols.append(death_col)
         cohort, invalid = get_case_ctrls(pts, None, group_col, visit_col, admit_col, disch_col,'min_valid_year', death_col, use_mort=True,use_admn=False,use_los=False)
@@ -335,6 +378,7 @@ def extract_data(use_ICU:str, label:str, time:int, icd_code:str, root_dir, disea
         cohort, invalid = get_case_ctrls(pts, los, group_col, visit_col, admit_col, disch_col,'min_valid_year', death_col, use_mort=False,use_admn=False,use_los=True)
     #print(cohort.head())
     
+    #print("After case" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     if use_ICU:
         cols.append(adm_visit_col)
     #print(cohort.head())
@@ -350,6 +394,7 @@ def extract_data(use_ICU:str, label:str, time:int, icd_code:str, root_dir, disea
     #print(cohort[cols].head())
     # save output
     cohort=cohort.rename(columns={"race":"ethnicity"})
+    #print("before save" + datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
     cohort[cols].to_csv(root_dir+"/data/cohort/"+cohort_output+".csv.gz", index=False, compression='gzip')
     print("[ COHORT SUCCESSFULLY SAVED ]")
 

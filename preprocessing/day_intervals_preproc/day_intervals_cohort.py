@@ -176,6 +176,27 @@ def partition_by_readmit(df:pd.DataFrame, gap:datetime.timedelta, group_col:str,
     print("[ READMISSION LABELS FINISHED ]")
     return case, ctrl, invalid
 
+def partition_by_readmit2(df:pd.DataFrame, gap:datetime.timedelta, group_col:str, visit_col:str, admit_col:str, disch_col:str, valid_col:str):
+    """Applies labels to individual visits according to whether or not a readmission has occurred within the specified `gap` days.
+    For a given visit, another visit must occur within the gap window for a positive readmission label.
+    The gap window starts from the disch_col time and the admit_col of subsequent visits are considered."""
+    
+    case = pd.DataFrame()   # hadm_ids with readmission within the gap period
+    ctrl = pd.DataFrame()   # hadm_ids without readmission within the gap period
+    invalid = pd.DataFrame()    # hadm_ids that are not considered in the cohort
+
+    # Iterate through groupbys based on group_col (subject_id). Data is sorted by subject_id and admit_col (admittime)
+    # to ensure that the most current hadm_id is last in a group.
+    #grouped= df[[group_col, visit_col, admit_col, disch_col, valid_col]].sort_values(by=[group_col, admit_col]).groupby(group_col)
+    df.sort_values(['subject_id', 'admittime'], inplace=True)
+    df['label'] =  (df['admittime'] -  df.groupby('subject_id')['dischtime'].shift()).shift(-1)
+    df['label'] = df['label'].apply(lambda x: 1 if x <= gap else 0)
+    case = df[df['label']==1]
+    ctrl = df[df['label']==0]
+    
+
+    print("[ READMISSION LABELS FINISHED ]")
+    return case, ctrl, invalid
 
 def partition_by_mort(df:pd.DataFrame, group_col:str, visit_col:str, admit_col:str, disch_col:str, death_col:str):
     """Applies labels to individual visits according to whether or not a death has occurred within

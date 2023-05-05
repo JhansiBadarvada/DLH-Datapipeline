@@ -6,6 +6,7 @@ import re
 import ast
 import importlib
 import datetime as dt
+from datetime import datetime
 from tqdm import tqdm
 import labs_preprocess_util
 from labs_preprocess_util import *
@@ -353,7 +354,90 @@ def preproc_labs(dataset_path: str, version_path:str, cohort_path:str, time_col:
 
     # Only return module measurements within the observation range, sorted by subject_id
     return df_cohort
+
+def preproc_labs1(dataset_path: str, version_path:str, cohort_path:str, time_col:str, anchor_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
+    """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
     
+    usecols = ['itemid','subject_id','hadm_id','charttime','valuenum','valueuom']
+    dtypes = {
+        'itemid':'int64',
+        'subject_id':'int64',
+        # 'hadm_id':'int64',            # hadm_id type not defined because it contains NaN values
+        # 'charttime':'datetime64[ns]', # used as an argument in 'parse_cols' in pd.read_csv
+        'value':'object',
+        'valuenum':'float64',
+        'valueuom':'object',
+        'flag':'object'
+    }
+    df_cohort=pd.DataFrame()
+    cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['admittime'])
+    if version_path=="mimiciv/1.0":
+        adm = pd.read_csv("./"+version_path+"/core/admissions.csv.gz", header=0, index_col=None, compression='gzip', usecols=['subject_id', 'hadm_id', 'admittime', 'dischtime'], parse_dates=['admittime', 'dischtime'])
+    elif version_path=="mimiciv/2.0":
+        adm = pd.read_csv("./"+version_path+"/hosp/admissions.csv.gz", header=0, index_col=None, compression='gzip', usecols=['subject_id', 'hadm_id', 'admittime', 'dischtime'], parse_dates=['admittime', 'dischtime'])
+    
+    print("Before Reading file", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+    # read module w/ custom params
+    chunk = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col])
+    print("After Reading File", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+    print(chunk.shape)
+        #chunk.dropna(subset=['hadm_id'],inplace=True,axis=1)
+    chunk=chunk.dropna(subset=['valuenum'])
+    chunk['valueuom'].fillna(0, inplace=True)  
+    chunk=chunk[chunk['subject_id'].isin(cohort['subject_id'].unique())]
+    #print(chunk['hadm_id'].isna().sum())
+    chunkna=chunk[chunk['hadm_id'].isna()]
+    chunk=chunk[chunk['hadm_id'].notnull()]
+    #chunkna = impute_hadm_ids(chunkna[['subject_id','hadm_id','itemid','charttime','valuenum','valueuom']].copy(), adm)
+    chunkna=chunkna.merge(adm[['subject_id', 'hadm_id', 'admittime', 'dischtime']], how='inner', on='subject_id', suffixes=('_old', '_new'))
+    del chunkna['hadm_id_old']
+    chunkna=chunkna.rename(columns={'hadm_id_new':'hadm_id'})
+    chunkna=chunkna[['subject_id','hadm_id','itemid','charttime','valuenum','valueuom']]
+    chunk=chunk.append(chunkna, ignore_index=True)
+    #print(chunk['hadm_id'].isna().sum())
+         
+    chunk = chunk.merge(cohort[['hadm_id', 'admittime','dischtime']], how='inner', left_on='hadm_id', right_on='hadm_id')
+    #print(chunk.head())
+    chunk['charttime']=pd.to_datetime(chunk['charttime'])
+    chunk['lab_time_from_admit'] = chunk['charttime'] - chunk['admittime']
+    #chunk['valuenum']=chunk['valuenum'].fillna(0)
+    chunk=chunk.dropna()
+        
+    #print(chunk.shape)
+    #print(chunk.head())
+    if df_cohort.empty:
+        df_cohort=chunk
+    else:
+        df_cohort=df_cohort.append(chunk, ignore_index=True)
+    
+    #labs = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col]).drop_duplicates()
+    
+    
+    
+    #print(df_cohort.shape)
+    #adm = pd.read_csv("./mimic-iv-1.0/core/admissions.csv.gz", header=0, index_col=None, compression='gzip', usecols=['subject_id', 'hadm_id', 'admittime', 'dischtime'], parse_dates=['admittime', 'dischtime'])
+    # labs.to_csv(".data/long_format/labs/labs.csv.gz", compression="gzip", index=False)
+    #print(adm.head())                  
+    # Use imputation function to impute missing hadm_ids where possible
+    #labs = impute_hadm_ids(labs[['subject_id','hadm_id','itemid','charttime']].copy(), adm)
+    #print(labs.shape)
+    
+    #print(labs.shape)
+    #labs=labs.rename_columns(columns={'hadm_id_new':'hadm_id'})     
+    #print(labs.shape)
+    #cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['admittime'])
+    #df_cohort = labs.merge(cohort[['hadm_id', 'admittime','dischtime']], how='inner', left_on='hadm_id', right_on='hadm_id')
+    
+    #df_cohort['lab_time_from_admit'] = df_cohort['charttime'] - df_cohort['admittime']
+    #df_cohort['valuenum']=df_cohort['valuenum'].fillna(0)
+    #df_cohort=df_cohort.dropna()
+    print("# Itemid: ", df_cohort.itemid.nunique())
+    print("# Admissions: ", df_cohort.hadm_id.nunique())
+    print("Total number of rows: ", df_cohort.shape[0])
+
+    # Only return module measurements within the observation range, sorted by subject_id
+    print("End Process labs", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+    return df_cohort
     
 def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, anchor_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
