@@ -100,5 +100,13 @@ If you wish to reduce the dataset, please run dataSubsetExtraction.py to extract
 - Follow the exact file paths and filenames given in instructions for each code block to run the pipeline.
 - For evaluation module, clear instructions are provided on how to use it as a standalone module.
 
-
+### Our Result
+<img 
+    style="display: block; 
+           margin-left: auto;
+           margin-right: auto;
+           width: 30%;"
+    src="https://github.com/JhansiBadarvada/DLH-Datapipeline/blob/main/images/Result.png?raw=true" 
+    alt="Our Result">
+</img>
 
