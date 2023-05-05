@@ -44,8 +44,9 @@ Go to https://physionet.org/content/mimiciv/1.0/
 
 Follow instructions to get access to MIMIC-IV dataset.
 
-Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-password https://physionet.org/files/mimiciv/1.0/
+Download the files using your terminal: wget -r -N -c -np --user {username} --ask-password https://physionet.org/files/mimiciv/1.0/
 
+If you wish to reduce the dataset, please run dataSubsetExtraction.py to extract a subset of randomly selected 500 patients.
 ### Repository Structure
 
 - **mainPipeline.ipynb**
@@ -92,8 +93,12 @@ Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-pa
 		It can also be used as standalone module.
 
 ### How to use the pipeline?
+- Dependencies are listed in the requirements.txt file. Please install these before proceeding on.
 - After downloading the repo, open **mainPipeline.ipynb**.
 - **mainPipeline.ipynb**, contains sequential code blocks to extract, preprocess, model and train MIMIC-IV EHR data.
 - Follow each code bloack and read intructions given just before each code block to run code block.
 - Follow the exact file paths and filenames given in instructions for each code block to run the pipeline.
 - For evaluation module, clear instructions are provided on how to use it as a standalone module.
+
+
+
