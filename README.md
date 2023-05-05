@@ -1,4 +1,4 @@
-# MIMIC-IV
+# MIMIC-IV 
 **MIMIC-IV data pipeline** is an end-to-end pipeline that offers a configurable framework to prepare MIMIC-IV data for the downstream tasks. 
 The pipeline cleans the raw data by removing outliers and allowing users to impute missing entries. 
 It also provides options for the clinical grouping of medical features using standard coding systems for dimensionality reduction.  
@@ -9,6 +9,9 @@ Besides the data processing modules, our pipeline also includes two additional m
 For modeling, the pipeline includes several commonly used sequential models for performing prediction tasks. 
 The evaluation module offers a series of standard methods for evaluating the performance of the created models. 
 This module also includes options for reporting individual and group fairness measures.
+
+##### Original Paper's Repository 
+Original MIMIC-IV data pipeline can be found [here](https://github.com/healthylaife/MIMIC-IV-Data-Pipeline)
 
 ##### Citing MIMIC-IV Data Pipeline:
 MIMIC-IV Data Pipeline is available on [ML4H](https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf).
