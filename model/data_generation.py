@@ -535,7 +535,3 @@ class Generator():
             
         with open("./data/dict/metaDic", 'wb') as fp:
             pickle.dump(metaDic, fp)
-            
-
-
-

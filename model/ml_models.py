@@ -322,6 +322,3 @@ class ML_models():
         imp_df['imp']=importance
         imp_df['feature']=features
         imp_df.to_csv('./data/output/'+'feature_importance.csv', index=False)
-                
-                
-
