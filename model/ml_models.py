@@ -16,7 +16,6 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.impute import SimpleImputer
 
 from imblearn.over_sampling import RandomOverSampler
 from sklearn.metrics import classification_report
@@ -102,25 +101,24 @@ class ML_models():
                     concat_cols.extend(cols_t)
 
             X_train,Y_train=self.getXY(train_hids,labels,concat_cols)
-            X_test,Y_test=self.getXY(test_hids,labels,concat_cols)
             #encoding categorical
             gen_encoder = LabelEncoder()
             eth_encoder = LabelEncoder()
             ins_encoder = LabelEncoder()
             age_encoder = LabelEncoder()
-            gen_encoder.fit(pd.concat([X_train['gender'], X_test['gender']]))
-            eth_encoder.fit(pd.concat([X_train['ethnicity'], X_test['ethnicity']]))
-            ins_encoder.fit(pd.concat([X_train['insurance'],X_test['insurance']]) )
+            gen_encoder.fit(X_train['gender'])
+            eth_encoder.fit(X_train['ethnicity'])
+            ins_encoder.fit(X_train['insurance'])
             #age_encoder.fit(X_train['Age'])
             X_train['gender']=gen_encoder.transform(X_train['gender'])
             X_train['ethnicity']=eth_encoder.transform(X_train['ethnicity'])
             X_train['insurance']=ins_encoder.transform(X_train['insurance'])
             #X_train['Age']=age_encoder.transform(X_train['Age'])
 
-            #print(X_train.shape)
-            #print(Y_train.shape)
+            print(X_train.shape)
+            print(Y_train.shape)
             
-            #X_test,Y_test=self.getXY(test_hids,labels,concat_cols)
+            X_test,Y_test=self.getXY(test_hids,labels,concat_cols)
             self.test_data=X_test.copy(deep=True)
             X_test['gender']=gen_encoder.transform(X_test['gender'])
             X_test['ethnicity']=eth_encoder.transform(X_test['ethnicity'])
@@ -128,8 +126,8 @@ class ML_models():
             #X_test['Age']=age_encoder.transform(X_test['Age'])
             
             
-            #print(X_test.shape)
-            #print(Y_test.shape)
+            print(X_test.shape)
+            print(Y_test.shape)
             #print("just before training")
             #print(X_test.head())
             self.train_model(X_train,Y_train,X_test,Y_test)
@@ -148,71 +146,26 @@ class ML_models():
         elif self.model_type=='Logistic Regression':
             X_train=pd.get_dummies(X_train,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
             X_test=pd.get_dummies(X_test,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
-            #print(X_train.shape, X_test.shape)
-            #print(X_train.columns.difference(X_test.columns).tolist())
-            missing_cols = X_train.columns.difference(X_test.columns).tolist()
-            for i in missing_cols:
-                X_test[i] = 0
-            #print(X_test.columns.difference(X_train.columns).tolist())
-            missing_cols = X_test.columns.difference(X_train.columns).tolist()
-            for i in missing_cols:
-                X_train[i] = 0
-            #print(X_train.shape, X_test.shape)
-            #print(X_train.columns.difference(X_test.columns).tolist())
-            features = X_train.columns
-            imp = SimpleImputer(strategy="most_frequent")
-            X_train = imp.fit_transform(X_train)
-            X_test = imp.fit_transform(X_test)
+            
             model = LogisticRegression().fit(X_train, Y_train) 
             logits=model.predict_log_proba(X_test)
             prob=model.predict_proba(X_test)
             self.loss(prob[:,1],np.asarray(Y_test),logits[:,1],False,True)
-            #print(X_train.type())
-            self.save_outputImp(Y_test,prob[:,1],logits[:,1],model.coef_[0],features)
+            self.save_outputImp(Y_test,prob[:,1],logits[:,1],model.coef_[0],X_train.columns)
         
         elif self.model_type=='Random Forest':
             X_train=pd.get_dummies(X_train,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
             X_test=pd.get_dummies(X_test,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
-            #print(X_train.shape, X_test.shape)
-            #print(X_train.columns.difference(X_test.columns).tolist())
-            missing_cols = X_train.columns.difference(X_test.columns).tolist()
-            for i in missing_cols:
-                X_test[i] = 0
-            #print(X_test.columns.difference(X_train.columns).tolist())
-            missing_cols = X_test.columns.difference(X_train.columns).tolist()
-            for i in missing_cols:
-                X_train[i] = 0
-            #print(X_train.shape, X_test.shape)
-            #print(X_train.columns.difference(X_test.columns).tolist())
-            features = X_train.columns
-            imp = SimpleImputer(strategy="most_frequent")
-            X_train = imp.fit_transform(X_train)
-            X_test = imp.fit_transform(X_test)
             model = RandomForestClassifier().fit(X_train, Y_train)
             logits=model.predict_log_proba(X_test)
             prob=model.predict_proba(X_test)
             self.loss(prob[:,1],np.asarray(Y_test),logits[:,1],False,True)
-            self.save_outputImp(Y_test,prob[:,1],logits[:,1],model.feature_importances_,features)
+            self.save_outputImp(Y_test,prob[:,1],logits[:,1],model.feature_importances_,X_train.columns)
         
         elif self.model_type=='Xgboost':
             X_train=pd.get_dummies(X_train,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
             X_test=pd.get_dummies(X_test,prefix=['gender','ethnicity','insurance'],columns=['gender','ethnicity','insurance'])
             model = xgb.XGBClassifier(objective="binary:logistic").fit(X_train, Y_train)
-            #print(X_train.shape, X_test.shape)
-            #print(X_train.columns.difference(X_test.columns).tolist())
-            missing_cols = X_train.columns.difference(X_test.columns).tolist()
-            for i in missing_cols:
-                X_test[i] = 0
-            #print(X_test.columns.difference(X_train.columns).tolist())
-            missing_cols = X_test.columns.difference(X_train.columns).tolist()
-            for i in missing_cols:
-                X_train[i] = 0
-            print(X_train.shape, X_test.shape)
-            #print(X_train.columns.difference(X_test.columns).tolist())
-            features = X_train.columns
-            imp = SimpleImputer(strategy="most_frequent")
-            X_train = imp.fit_transform(X_train)
-            X_test = imp.fit_transform(X_test)
             #logits=model.predict_log_proba(X_test)
             #print(self.test_data['ethnicity'])
             #print(self.test_data.shape)
@@ -220,7 +173,7 @@ class ML_models():
             prob=model.predict_proba(X_test)
             logits=np.log2(prob[:,1]/prob[:,0])
             self.loss(prob[:,1],np.asarray(Y_test),logits,False,True)
-            self.save_outputImp(Y_test,prob[:,1],logits,model.feature_importances_,features)
+            self.save_outputImp(Y_test,prob[:,1],logits,model.feature_importances_,X_train.columns)
 
 
     
@@ -229,7 +182,6 @@ class ML_models():
         y_df=pd.DataFrame()   
         features=[]
         #print(ids)
-        #print(concat_cols)
         for sample in ids:
             if self.data_icu:
                 y=labels[labels['stay_id']==sample]['label']
@@ -250,20 +202,20 @@ class ML_models():
             else:
                 dyn_df=pd.DataFrame()
                 for key in dyn.columns.levels[0]:
-                    dyn1=dyn[key]
+                    dyn=dyn[key]
                     if self.data_icu:
                         if ((key=="CHART") or (key=="MEDS")):
-                            agg=dyn1.aggregate("mean")
+                            agg=dyn.aggregate("mean")
                             agg=agg.reset_index()
                         else:
-                            agg=dyn1.aggregate("max")
+                            agg=dyn.aggregate("max")
                             agg=agg.reset_index()
                     else:
                         if ((key=="LAB") or (key=="MEDS")):
-                            agg=dyn1.aggregate("mean")
+                            agg=dyn.aggregate("mean")
                             agg=agg.reset_index()
                         else:
-                            agg=dyn1.aggregate("max")
+                            agg=dyn.aggregate("max")
                             agg=agg.reset_index()
                     if dyn_df.empty:
                         dyn_df=agg

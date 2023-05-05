@@ -333,7 +333,7 @@ class Generator():
             dyn_csv=pd.DataFrame()
             ###MEDS
             if(self.feat_med):
-                feat=meds['drug_name'].unique()
+                feat=meds['itemid'].unique()
                 df2=meds[meds['hadm_id']==hid]
                 if df2.shape[0]==0:
                     val=pd.DataFrame(np.zeros([los,len(feat)]),columns=feat)
@@ -381,7 +381,7 @@ class Generator():
             
             ###PROCS
             if(self.feat_proc):
-                feat=proc['icd_code'].unique()
+                feat=proc['itemid'].unique()
                 df2=proc[proc['hadm_id']==hid]
                 if df2.shape[0]==0:
                     df2=pd.DataFrame(np.zeros([los,len(feat)]),columns=feat)

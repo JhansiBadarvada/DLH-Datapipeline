@@ -60,13 +60,13 @@ class LSTMBase(nn.Module):
         if self.cond_vocab_size:
             self.cond=StatEmbed(self.device,self.cond_vocab_size,self.embed_size,self.latent_size)
         
-        self.ethEmbed=nn.Embedding(self.eth_vocab_size,self.latent_size,self.padding_idx) 
+        self.ethEmbed=nn.Embedding(self.eth_vocab_size,self.latent_size,self.padding_idx)
         self.genderEmbed=nn.Embedding(self.gender_vocab_size,self.latent_size,self.padding_idx) 
         self.ageEmbed=nn.Embedding(self.age_vocab_size,self.latent_size,self.padding_idx) 
         self.insEmbed=nn.Embedding(self.ins_vocab_size,self.latent_size,self.padding_idx) 
        
-        print(self.modalities)
-        self.embedfc=nn.Linear(self.latent_size * 7, self.latent_size, True)
+        
+        self.embedfc=nn.Linear((self.latent_size*(self.modalities+4)), self.latent_size, True)
         self.rnn=nn.LSTM(input_size=self.latent_size,hidden_size=self.rnn_size,num_layers = args.rnnLayers,batch_first=True)
         self.fc1=nn.Linear(self.rnn_size, int((self.rnn_size)/2), True)
         self.fc2=nn.Linear(int((self.rnn_size)/2), 1, True)
@@ -93,17 +93,15 @@ class LSTMBase(nn.Module):
 #             print(demo[0],demo[200],demo[400],demo[600],demo[800])
         if meds.shape[0]:
             if meds.shape[0]>self.batch_size:
-                med=meds[-self.batch_size:]
-            else:
-                med=meds
-            medEmbedded=self.med(med)
+                meds=meds[-self.batch_size:]
+            medEmbedded=self.med(meds)
             
             if out1.nelement():
                 out1=torch.cat((out1,medEmbedded),2)
             else:
                 out1=medEmbedded
-            print(out1.shape)
-            print(out1.nelement())
+            #print(out1.shape)
+            #print(out1.nelement())
         if proc.shape[0]:
             if proc.shape[0]>self.batch_size:
                 proc=proc[-self.batch_size:]
@@ -117,7 +115,7 @@ class LSTMBase(nn.Module):
             if lab.shape[0]>self.batch_size:
                 lab=lab[-self.batch_size:]
             labEmbedded=self.lab(lab)
-            print("lab",labEmbedded.shape)
+            #print("lab",labEmbedded.shape)
             if out1.nelement():
                 out1=torch.cat((out1,labEmbedded),2)
             else:
@@ -138,13 +136,14 @@ class LSTMBase(nn.Module):
             if chart.shape[0]>self.batch_size:
                 chart=chart[-self.batch_size:]
             chartEmbed=self.chart(chart)
-            print("chartEmbed",chartEmbed.shape)
-            print(chartEmbed[5,:,0:10])
+#             print("chartEmbed",chartEmbed.shape)
+#             print(chartEmbed[5,:,0:10])
             if out1.nelement():
                 out1=torch.cat((out1,chartEmbed),2)
             else:
                 out1=chartEmbed
-        print("out",out1.shape)
+        
+#         print("out",out1.shape)
         if conds.shape[0]>self.batch_size:
                 conds=conds[-self.batch_size:]
         conds=conds.to(self.device)
@@ -153,12 +152,13 @@ class LSTMBase(nn.Module):
         condEmbed=condEmbed.repeat(1,out1.shape[1],1)
         condEmbed=condEmbed.type(torch.FloatTensor)
         condEmbed=condEmbed.to(self.device)
-        print("cond",condEmbed.shape)
+#         print("cond",condEmbed.shape)
         out1=torch.cat((out1,condEmbed),2)
-        print("cond",condEmbed.shape)
-        print("out",out1.shape)
+#         print("cond",condEmbed.shape)
+        
+#         print("out",out1.shape)
         if demo.shape[0]>self.batch_size:
-            demo=demo[-self.batch_size:]
+                demo=demo[-self.batch_size:]
         gender=demo[:,0].to(self.device)
         gender=gender.type(torch.LongTensor)
         gender=gender.to(self.device)
@@ -179,7 +179,7 @@ class LSTMBase(nn.Module):
         eth=eth.type(torch.FloatTensor)
         eth=eth.to(self.device)
         out1=torch.cat((out1,eth),2)
-        print(eth.shape)
+#         print(eth.shape)
         
         ins=demo[:,2].to(self.device)
         ins=ins.type(torch.LongTensor)
@@ -201,14 +201,14 @@ class LSTMBase(nn.Module):
         age=age.type(torch.FloatTensor)
         age=age.to(self.device)
         out1=torch.cat((out1,age),2)
-        print(age.shape)
+#         print(age.shape)
         
-        print("out",out1.shape)
+#         print("out",out1.shape)
         
         out1=out1.type(torch.FloatTensor)
         out1=out1.to(self.device)
         out1=self.embedfc(out1)
-        print("fcout",out1.shape)
+        #print("fcout",out1.shape)
         
         h_0, c_0 = self.init_hidden()
         h_0, c_0 = h_0.to(self.device), c_0.to(self.device)
@@ -216,20 +216,19 @@ class LSTMBase(nn.Module):
         _, (out1, code_c_n)=self.rnn(out1, (h_0, c_0))
         out1=out1[-1,:,:]
         out1=out1.squeeze()
-        print("rnnout",out1.shape)
+        #print("rnnout",out1.shape)
         
         
         out1 = self.fc1(out1)
-        out1 = self.fc2(out1)
-        print("out1",out1.shape)
+        # out1 = self.fc2(out1)
+        #print("out1",out1.shape)
         
         
-        
+        #print("sig out",sigout1[16])
         
         
         sig = nn.Sigmoid()
         sigout1=sig(out1)
-        print("sig out",sigout1[16])
         return sigout1,out1
     
     def init_hidden(self):
@@ -320,7 +319,7 @@ class LSTMBaseH(nn.Module):
         out1=torch.zeros(size=(0,0))
         
         if meds.shape[0]:
-            medEmbedded=self.med(med)
+            medEmbedded=self.med(meds)
             
             if out1.nelement():
                 out1=torch.cat((out1,medEmbedded),2)
@@ -663,7 +662,7 @@ class LSTMAttn(nn.Module):
         #self.sig = nn.Sigmoid()
         
     def forward(self,X):        
-        meds,chart,out,proc,lab,conds,demo=X[0],X[1],X[2],X[3],X[4],X[5],X[6]    
+        meds,charts,outs,procs,labs,conds,demo=X[0],X[1],X[2],X[3],X[4],X[5],X[6]    
         
         out1 = torch.zeros(size=(1,0))
         
@@ -943,7 +942,7 @@ class CNNBase(nn.Module):
         out1=torch.zeros(size=(0,0))
         
         if meds.shape[0]:
-            medEmbedded=self.med(med)
+            medEmbedded=self.med(meds)
             
             if out1.nelement():
                 out1=torch.cat((out1,medEmbedded),2)
@@ -1134,7 +1133,7 @@ class CNNBaseH(nn.Module):
         out1=torch.zeros(size=(0,0))
         
         if meds.shape[0]:
-            medEmbedded=self.med(med)
+            medEmbedded=self.med(meds)
             
             if out1.nelement():
                 out1=torch.cat((out1,medEmbedded),2)

@@ -133,9 +133,9 @@ class DL_models():
         labels=pd.read_csv('./data/csv/labels.csv', header=0)
         for i in range(self.k_fold):
             self.create_model(self.model_type)
-            print("[ MODEL CREATED ]")
-            print(self.net)
-            print("==================={0:2d} FOLD=====================".format(i))
+            # print("[ MODEL CREATED ]")
+            # print(self.net)
+            # print("==================={0:2d} FOLD=====================".format(i))
             
             test_hids=list(k_hids[i])
             #test_hids=test_hids[0:200]
@@ -158,17 +158,17 @@ class DL_models():
                 train_truth=[]
                 self.net.train()
             
-                print("======= EPOCH {:.1f} ========".format(epoch))
-                print("batch size = ", str(args.batch_size), str(len(train_hids)))
+                # print("======= EPOCH {:.1f} ========".format(epoch))
+                # print("batch size = ", str(args.batch_size), str(len(train_hids)))
                 xy = len(train_hids)/(args.batch_size)
-                print("batch size = ", xy, range(int(len(train_hids)/(args.batch_size))))
+                # print("batch size = ", xy, range(int(len(train_hids)/(args.batch_size))))
                 for nbatch in range(int(len(train_hids)/(args.batch_size))):
                     meds,chart,out,proc,lab,stat_train,demo_train,Y_train=self.getXY(train_hids[nbatch*args.batch_size:(nbatch+1)*args.batch_size],labels)
-                    print(chart.shape)
-                    print(meds.shape)
-                    print(stat_train.shape)
-                    print(demo_train.shape)
-                    print(Y_train.shape)
+                    # print(chart.shape)
+                    # print(meds.shape)
+                    # print(stat_train.shape)
+                    # print(demo_train.shape)
+                    # print(Y_train.shape)
                     
                     output,logits = self.train_model(meds,chart,out,proc,lab,stat_train,demo_train,Y_train)
                     
@@ -291,14 +291,14 @@ class DL_models():
         keys=dyn.columns.levels[0]
         for i in range(len(keys)):
             dyn_df.append(torch.zeros(size=(1,0)))
-            print(len(dyn_df))
+            # print(len(dyn_df))
         for sample in ids:
             if self.data_icu:
                 y=labels[labels['stay_id']==sample]['label']
             else:
                 y=labels[labels['hadm_id']==sample]['label']
             y_df.append(int(y))
-            print(sample)
+            # print(sample)
             dyn=pd.read_csv('./data/csv/'+str(sample)+'/dynamic.csv',header=[0,1])
 
             for key in range(len(keys)):
@@ -316,7 +316,7 @@ class DL_models():
                 else:
                     dyn_df[key]=dyn1
             
-                print(dyn_df[key].shape)        
+                # print(dyn_df[key].shape)        
             
             stat=pd.read_csv('./data/csv/'+str(sample)+'/static.csv',header=[0,1])
             stat=stat['COND']
